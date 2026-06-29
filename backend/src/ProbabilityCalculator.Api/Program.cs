@@ -22,18 +22,14 @@ builder.Services.AddSingleton<ICalculationLogger, FileCalculationLogger>();
 // Calculator service
 builder.Services.AddScoped<ICalculatorService, CalculatorService>();
 
-// CORS for dev server in development
+// CORS — allowed origins read from configuration
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? [];
 builder.Services.AddCors(options =>
 {
     options.AddDefaultPolicy(policy =>
-    {
-        if (builder.Environment.IsDevelopment())
-        {
-            policy.WithOrigins("http://localhost:5173")
-                  .AllowAnyHeader()
-                  .AllowAnyMethod();
-        }
-    });
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyHeader()
+              .AllowAnyMethod());
 });
 
 builder.Services.AddOpenApi();

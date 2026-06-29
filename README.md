@@ -202,6 +202,19 @@ Look for this setting:
 
 Change the value to any file path you want. The file is created automatically.
 
+### Backend — CORS Allowed Origins
+
+The allowed frontend URLs are configured in:
+  backend/src/ProbabilityCalculator.Api/appsettings.Development.json
+
+Default development values:
+
+  "Cors": {
+    "AllowedOrigins": [ "http://localhost:5173", "http://localhost:5174" ]
+  }
+
+Add your production frontend URL here when deploying. The base appsettings.json has an empty array as a safe default.
+
 ### Backend — API Port
 
 The port is set in:
