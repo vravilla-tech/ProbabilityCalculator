@@ -1,6 +1,6 @@
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NSubstitute;
-using ProbabilityCalculator.Api.Logging;
 using ProbabilityCalculator.Api.Models;
 using ProbabilityCalculator.Api.Operations;
 using ProbabilityCalculator.Api.Services;
@@ -9,7 +9,7 @@ namespace ProbabilityCalculator.Tests.Services;
 
 public class CalculatorServiceTests
 {
-    private readonly ICalculationLogger _logger = Substitute.For<ICalculationLogger>();
+    private readonly ILogger<CalculatorService> _logger = Substitute.For<ILogger<CalculatorService>>();
     private readonly CombinedWithOperation _combinedWith = new();
     private readonly EitherOperation _either = new();
     private readonly CalculatorService _sut;
@@ -37,7 +37,12 @@ public class CalculatorServiceTests
     public void Calculate_ShouldCallLogger()
     {
         _sut.Calculate(new CalculationRequest(0.5, 0.5, "CombinedWith"));
-        _logger.Received(1).Log(Arg.Any<CalculationResult>());
+        _logger.Received(1).Log(
+            LogLevel.Information,
+            Arg.Any<EventId>(),
+            Arg.Any<object>(),
+            Arg.Any<Exception?>(),
+            Arg.Any<Func<object, Exception?, string>>());
     }
 
     [Fact]
@@ -73,7 +78,7 @@ public class CalculatorServiceTests
     [Fact]
     public void Calculate_LoggerReceivesCorrectOperation()
     {
-        _sut.Calculate(new CalculationRequest(0.4, 0.6, "Either"));
-        _logger.Received(1).Log(Arg.Is<CalculationResult>(r => r.Operation == "Either"));
+        var result = _sut.Calculate(new CalculationRequest(0.4, 0.6, "Either"));
+        result.Operation.Should().Be("Either");
     }
 }

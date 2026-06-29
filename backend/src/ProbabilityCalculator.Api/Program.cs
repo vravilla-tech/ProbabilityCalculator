@@ -1,13 +1,20 @@
 using FluentValidation;
-using ProbabilityCalculator.Api.Logging;
 using ProbabilityCalculator.Api.Models;
 using ProbabilityCalculator.Api.Operations;
 using ProbabilityCalculator.Api.Services;
 using ProbabilityCalculator.Api.Validation;
 using Scalar.AspNetCore;
+using Serilog;
 
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(new ConfigurationBuilder()
+        .AddJsonFile("appsettings.json")
+        .AddJsonFile($"appsettings.{Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production"}.json", optional: true)
+        .Build())
+    .CreateLogger();
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseSerilog();
 
 // All operations injected as IEnumerable<ICalculationOperation>
 builder.Services.AddSingleton<ICalculationOperation, CombinedWithOperation>();
@@ -15,9 +22,6 @@ builder.Services.AddSingleton<ICalculationOperation, EitherOperation>();
 
 // Validation
 builder.Services.AddScoped<IValidator<CalculationRequest>, CalculationRequestValidator>();
-
-// File based audit log
-builder.Services.AddSingleton<ICalculationLogger, FileCalculationLogger>();
 
 // Calculator service
 builder.Services.AddScoped<ICalculatorService, CalculatorService>();

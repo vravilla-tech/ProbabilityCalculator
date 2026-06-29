@@ -1,10 +1,9 @@
-using ProbabilityCalculator.Api.Logging;
 using ProbabilityCalculator.Api.Models;
 using ProbabilityCalculator.Api.Operations;
 
 namespace ProbabilityCalculator.Api.Services;
 
-public class CalculatorService(IEnumerable<ICalculationOperation> operations, ICalculationLogger logger)
+public class CalculatorService(IEnumerable<ICalculationOperation> operations, ILogger<CalculatorService> logger)
     : ICalculatorService
 {
     public CalculationResult Calculate(CalculationRequest request)
@@ -16,7 +15,9 @@ public class CalculatorService(IEnumerable<ICalculationOperation> operations, IC
         var result = operation.Calculate(request.ProbabilityA, request.ProbabilityB);
         var calculationResult = new CalculationResult(request.Operation, request.ProbabilityA, request.ProbabilityB, result);
 
-        logger.Log(calculationResult);
+        logger.LogInformation(
+            "Calculation | Operation={Operation} | A={ProbabilityA} | B={ProbabilityB} | Result={Result}",
+            calculationResult.Operation, calculationResult.ProbabilityA, calculationResult.ProbabilityB, calculationResult.Result);
 
         return calculationResult;
     }

@@ -10,7 +10,7 @@ You enter two probability values (between 0 and 1) and pick one of two calculati
   Combined With — the chance that both events happen: P(A) x P(B)
   Either — the chance that at least one event happens: P(A) + P(B) - P(A) x P(B)
 
-The result is shown on screen and saved to a log file on the server.
+The result is shown on screen and saved to a rolling log file on the server.
 
 
 ## Requirements
@@ -18,6 +18,35 @@ The result is shown on screen and saved to a log file on the server.
   .NET 10 SDK
   Node.js 20 or later
   npm 10 or later
+
+
+## NuGet Packages (Backend)
+
+  FluentValidation.AspNetCore   Input validation
+  Microsoft.AspNetCore.OpenApi  Built-in OpenAPI support (.NET 10)
+  Scalar.AspNetCore             API documentation UI
+  Serilog.AspNetCore            Structured logging framework
+  Serilog.Sinks.File            Writes Serilog logs to a rolling text file
+
+Install all packages by running:
+
+  cd backend
+  dotnet restore
+
+
+## npm Packages (Frontend)
+
+  react-hook-form               Form state and validation
+  vitest                        Test runner
+  @testing-library/react        Component testing
+  @testing-library/jest-dom     DOM assertions
+  @testing-library/user-event   User interaction simulation
+  jsdom                         Browser environment for tests
+
+Install all packages by running:
+
+  cd frontend
+  npm install
 
 
 ## How to Run
@@ -43,6 +72,7 @@ To test manually, send a POST request to http://localhost:5246/api/calculate wit
 
 Valid values for operation: CombinedWith, Either
 Valid range for probabilityA and probabilityB: 0 to 1 inclusive
+Maximum decimal places: 15
 
 Expected response:
 
@@ -80,11 +110,26 @@ All 15 tests should pass.
 
 ## Project Structure
 
-  backend/src/ProbabilityCalculator.Api       The API (C#)
-  backend/tests/ProbabilityCalculator.Tests   Backend tests (24 total)
-  frontend/                                   The web app (React + TypeScript)
-  frontend/src/test/                          Frontend tests (15 total)
-  .vscode/                                    VS Code settings
+  backend/src/ProbabilityCalculator.Api/
+    Models/          CalculationRequest and CalculationResult records
+    Operations/      ICalculationOperation interface, CombinedWithOperation, EitherOperation
+    Services/        ICalculatorService interface and CalculatorService
+    Validation/      CalculationRequestValidator (FluentValidation)
+    Program.cs       DI registration, Serilog setup, CORS, endpoint mapping
+
+  backend/tests/ProbabilityCalculator.Tests/
+    Operations/      Tests for CombinedWithOperation and EitherOperation
+    Services/        Tests for CalculatorService
+    Validation/      Tests for CalculationRequestValidator
+
+  frontend/src/
+    components/      CalculatorForm and ResultDisplay
+    test/            Frontend tests (api, form, result display)
+    App.tsx          Root component and state management
+    api.ts           API client
+    types.ts         Shared TypeScript interfaces
+
+  .vscode/           launch.json, tasks.json, extensions.json
 
 
 ## How It Is Designed
@@ -97,7 +142,7 @@ Validation happens first. Both probabilities must be between 0 and 1. If the inp
 
 The Strategy Pattern is used for the two operations. Each operation is its own class (CombinedWithOperation, EitherOperation). The service looks up the right one by name and runs it. To add a new operation in the future, you just add a new class — nothing else needs to change.
 
-Every successful calculation is written to a plain text file (calculationlog.txt) with the date, inputs, and result.
+Logging is handled by Serilog via ASP.NET Core's built-in ILogger. Every successful calculation is logged with the operation name, inputs, and result. Serilog writes to a rolling daily text file — no custom logging classes are needed.
 
 ### Frontend
 
@@ -105,6 +150,7 @@ The frontend is built with React 19 and TypeScript using Vite.
 
   The form collects the two probabilities and the selected operation
   React Hook Form handles form validation on the client side before anything is sent to the API
+  Probabilities are validated to a maximum of 15 decimal places (matching double precision)
   The result is displayed below the form
   If the API returns an error, it is shown in red and the previous result is cleared
 
@@ -115,13 +161,17 @@ The Strategy Pattern was chosen for the calculations because the brief mentioned
 
 FluentValidation was chosen over basic data annotations because validation rules live in a dedicated class that can be unit tested independently. The validator also derives valid operation names directly from the registered operations, so it stays in sync automatically when new operations are added.
 
-The frontend uses React Hook Form rather than plain React state because it avoids re-rendering the component on every keystroke and keeps validation logic separate from display logic. For two fields this is a minor gain, but it reflects the right approach for a form that may grow.
+Serilog was chosen for logging because it handles thread safety, file rolling, and structured output automatically. It plugs into ASP.NET Core's standard ILogger system so the service uses the familiar ILogger interface rather than a Serilog-specific one. This keeps the service clean and testable.
 
 The API documentation uses Scalar instead of Swagger. In .NET 10, Microsoft replaced Swashbuckle (the traditional Swagger package) with built-in OpenAPI support. Scalar is the recommended UI for this — it provides the same ability to browse and test endpoints but works natively with .NET 10 without additional packages. The API docs can be viewed at http://localhost:5246/scalar/v1 when running locally.
 
-The audit log is a plain text file as specified. In a production system this would be replaced with structured logging (such as Azure Application Insights or a logging service) to support searching, filtering, and alerting. The ICalculationLogger interface already abstracts this — swapping the implementation requires no changes to the service.
+The frontend uses React Hook Form rather than plain React state because it avoids re-rendering the component on every keystroke and keeps validation logic separate from display logic.
 
 The API is stateless. Each request carries everything it needs. This was a deliberate choice to make the service easy to scale horizontally — multiple instances can run behind a load balancer without needing to share session state.
+
+The probability inputs are restricted to 15 decimal places on the frontend. This matches the maximum precision of a 64-bit double used in both JavaScript and C#, giving the user a clear error instead of silent truncation.
+
+double was chosen over decimal for probability values because probabilities are mathematical quantities, not monetary ones. double is hardware-accelerated and standard for scientific calculations. decimal is more appropriate for currency where exact decimal representation matters.
 
 
 ## Cloud, Deployment and Scaling
@@ -143,7 +193,7 @@ Because the API is stateless, scaling is straightforward. Under high load, the c
 
 For global usage, the frontend static files would be served from a CDN with edge locations in each region, so users get fast load times regardless of where they are. The API could be deployed to multiple regions with Azure Front Door routing requests to the nearest one.
 
-The text file log would need to be replaced with a centralised logging service (such as Azure Application Insights) before scaling to multiple instances, since each instance would otherwise write to its own separate file.
+When running multiple API instances, Serilog should be configured to write to a centralised sink such as Azure Application Insights or Azure Blob Storage, since each instance would otherwise write to its own separate file.
 
 ### High Availability
 
@@ -171,7 +221,7 @@ Azure Application Insights would be used to track request volume, response times
 
 ### Logging
 
-Each API request would be logged with a correlation ID so that a single user journey can be traced across log entries. Structured logging (key-value pairs rather than plain text) makes it easy to filter and query logs. The current text file log would be replaced with this in production.
+Serilog is already wired up and writing structured log entries. In production, an additional Serilog sink would send logs to Azure Application Insights or a centralised log store. Each API request would carry a correlation ID so that a single user journey can be traced across log entries.
 
 ### Scaling
 
@@ -190,17 +240,29 @@ If an issue is reported in production, the steps would be:
 
 ## Configuration
 
-### Backend — Log File Path
+### Backend — Serilog Logging
 
-The audit log file path can be changed in:
+Serilog is configured in:
   backend/src/ProbabilityCalculator.Api/appsettings.json
 
-Look for this setting:
+Default settings:
 
-  CalculationLog
-    FilePath: calculationlog.txt
+  Serilog
+    MinimumLevel: Information
+    WriteTo: File
+      path: calculationlog.txt
+      rollingInterval: Day
+      outputTemplate: timestamp | message
 
-Change the value to any file path you want. The file is created automatically.
+The log file rolls daily. Files are named calculationlog20260629.txt, calculationlog20260630.txt etc.
+Change the path or rolling interval in appsettings.json without any code changes.
+
+To add a console sink for local development, add this to appsettings.Development.json:
+
+  "WriteTo": [
+    { "Name": "Console" },
+    { "Name": "File", "Args": { "path": "calculationlog.txt", "rollingInterval": "Day" } }
+  ]
 
 ### Backend — CORS Allowed Origins
 
