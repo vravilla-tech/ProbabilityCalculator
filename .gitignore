@@ -1,0 +1,22 @@
+# .NET
+backend/src/*/bin/
+backend/src/*/obj/
+backend/tests/*/bin/
+backend/tests/*/obj/
+*.user
+*.suo
+.vs/
+backend/src/ProbabilityCalculator.Api/calculationlog.txt
+
+# Node
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/.env.local
+
+# Vite
+frontend/.vite/
+
+# OS
+.DS_Store
+Thumbs.db

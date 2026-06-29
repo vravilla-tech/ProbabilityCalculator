@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ProbabilityCalculator.Api/ProbabilityCalculator.Api.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ProbabilityCalculator.Tests/ProbabilityCalculator.Tests.csproj" />
+  </Folder>
+</Solution>
