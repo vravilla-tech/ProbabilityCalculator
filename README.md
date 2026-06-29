@@ -33,6 +33,26 @@ The API will start at http://localhost:5246
 
 To test the API in the browser, open: http://localhost:5246/scalar/v1
 
+To test manually, send a POST request to http://localhost:5246/api/calculate with this JSON body:
+
+  {
+    "probabilityA": 0.5,
+    "probabilityB": 0.5,
+    "operation": "CombinedWith"
+  }
+
+Valid values for operation: CombinedWith, Either
+Valid range for probabilityA and probabilityB: 0 to 1 inclusive
+
+Expected response:
+
+  {
+    "operation": "CombinedWith",
+    "probabilityA": 0.5,
+    "probabilityB": 0.5,
+    "result": 0.25
+  }
+
 ### Step 2 — Start the frontend
 
 Open a second terminal and run:
