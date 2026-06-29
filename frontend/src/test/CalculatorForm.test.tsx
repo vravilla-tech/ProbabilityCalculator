@@ -51,4 +51,14 @@ describe('CalculatorForm', () => {
       expect(onInvalid).toHaveBeenCalled();
     });
   });
+
+  it('shows error when probability has more than 15 decimal places', async () => {
+    render(<CalculatorForm onSubmit={vi.fn()} onInvalid={vi.fn()} isLoading={false} />);
+    await userEvent.type(screen.getByLabelText('Probability A'), '0.1234567890123456');
+    await userEvent.type(screen.getByLabelText('Probability B'), '0.5');
+    await userEvent.click(screen.getByRole('button', { name: /calculate/i }));
+    await waitFor(() => {
+      expect(screen.getByText(/maximum 15 decimal places/i)).toBeInTheDocument();
+    });
+  });
 });

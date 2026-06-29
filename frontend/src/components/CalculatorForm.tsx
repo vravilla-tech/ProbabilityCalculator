@@ -19,6 +19,10 @@ export function CalculatorForm({ onSubmit, onInvalid, isLoading }: Props) {
     min: { value: 0, message: 'Must be >= 0.' },
     max: { value: 1, message: 'Must be <= 1.' },
     valueAsNumber: true,
+    validate: (value: number) => {
+      const decimals = value.toString().split('.')[1]?.length ?? 0;
+      return decimals <= 15 || 'Maximum 15 decimal places allowed.';
+    },
   };
 
   return (

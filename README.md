@@ -75,7 +75,7 @@ All 24 tests should pass.
   cd frontend
   npm test
 
-All 14 tests should pass.
+All 15 tests should pass.
 
 
 ## Project Structure
@@ -83,7 +83,7 @@ All 14 tests should pass.
   backend/src/ProbabilityCalculator.Api       The API (C#)
   backend/tests/ProbabilityCalculator.Tests   Backend tests (24 total)
   frontend/                                   The web app (React + TypeScript)
-  frontend/src/test/                          Frontend tests (14 total)
+  frontend/src/test/                          Frontend tests (15 total)
   .vscode/                                    VS Code settings
 
 
@@ -241,4 +241,4 @@ You can also run individual tasks from Terminal > Run Task:
   test: all       runs all 24 backend tests
   frontend: dev   starts the frontend
 
-To run the frontend tests, open a terminal in the frontend folder and run npm test. This runs 14 tests covering the API client, form behaviour, and result display.
+To run the frontend tests, open a terminal in the frontend folder and run npm test. This runs 15 tests covering the API client, form behaviour, decimal place validation, and result display.
